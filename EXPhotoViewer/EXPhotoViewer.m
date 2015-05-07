@@ -3,8 +3,8 @@
 //  EXPhotoViewerDemo
 //
 //  Created by Julio Carrettoni on 3/20/14.
-//  Copyright (c) 2014 Julio Carrettoni. All rights reserved.
-//
+//  Modified by Antoine Harlin on 7/05/15.
+//  MIT license
 
 #import "EXPhotoViewer.h"
 
@@ -18,6 +18,7 @@
 @property (nonatomic, retain) UIViewController* controller;
 @property (nonatomic, retain) UIViewController* selfController;
 @property (atomic, readwrite) BOOL isClosing;
+@property (strong, nonatomic) NSString *titleString;
 
 @end
 
@@ -25,21 +26,29 @@
 
 + (instancetype)showImageFrom:(UIImageView *)imageView {
     EXPhotoViewer *viewer = [self newViewerFor:imageView];
-
+    
     [viewer show];
+    
+    return viewer;
+}
 
++ (instancetype)showImageFrom:(UIImageView *)imageView title:(NSString *)title {
+    EXPhotoViewer *viewer = [self newViewerFor:imageView];
+    viewer.titleString = title;
+    [viewer show];
+    
     return viewer;
 }
 
 + (instancetype)newViewerFor:(UIImageView *)imageView {
     EXPhotoViewer *viewer = nil;
-
+    
     if (imageView.image) {
         viewer = [[self alloc] init];
         viewer.originalImageView = imageView;
         viewer.backgroundScale = 1.0;
     }
-
+    
     return viewer;
 }
 
@@ -74,7 +83,7 @@
 - (void)show {
     if (self.controller)
         return;
-
+    
     UIViewController * controller = [self rootViewController];
     
     self.tempViewContainer = [[UIView alloc] initWithFrame:controller.view.bounds];
@@ -93,15 +102,26 @@
     self.view.backgroundColor = [UIColor clearColor];
     
     [controller.view addSubview:self.view];
-
+    
+    // Create title label
+    if (self.titleString) {
+        self.titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, self.view.frame.size.height - 30, self.view.frame.size.width, 30)];
+        self.titleLabel.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleTopMargin;
+        self.titleLabel.text = self.titleString;
+        self.titleLabel.textColor = [UIColor whiteColor];
+        self.titleLabel.backgroundColor = [UIColor colorWithWhite:0.000 alpha:0.400];
+        
+        [self.view addSubview:self.titleLabel];
+    }
+    
     self.theImageView.image = self.originalImageView.image;
     self.originalImageRect = [self.originalImageView convertRect:self.originalImageView.bounds toView:self.view];
-
+    
     self.theImageView.frame = self.originalImageRect;
     
     //listen to the orientation change notification
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(orientationDidChange:) name:UIDeviceOrientationDidChangeNotification object:nil];
-
+    
     
     [UIView animateWithDuration:0.3 animations:^{
         self.view.backgroundColor = (self.backgroundColor) ? self.backgroundColor : [UIColor blackColor];
@@ -112,7 +132,7 @@
         UITapGestureRecognizer* tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(close)];
         [self.view addGestureRecognizer:tap];
     }];
-
+    
     self.selfController = self; //Stupid ARC I need to do this to avoid being dealloced :P
 }
 
@@ -121,7 +141,7 @@
 
 - (void)orientationDidChange:(NSNotification *)note {
     self.theImageView.frame = [self centeredOnScreenImage:self.theImageView.image];
-
+    
     CGRect newFrame = [self rootViewController].view.bounds;
     self.tempViewContainer.frame = newFrame;
     self.view.frame = newFrame;
@@ -131,12 +151,12 @@
 - (void)close {
     if (!self.isClosing) {
         self.isClosing = YES;
-
+        
         CGRect absoluteCGRect = [self.view convertRect:self.theImageView.frame fromView:self.theImageView.superview];
         self.zoomeableScrollView.contentOffset = CGPointZero;
         self.zoomeableScrollView.contentInset = UIEdgeInsetsZero;
         self.theImageView.frame = absoluteCGRect;
-
+        
         [UIView animateWithDuration:0.3 animations:^{
             self.theImageView.frame = self.originalImageRect;
             self.view.backgroundColor = [UIColor clearColor];
@@ -149,10 +169,10 @@
             }
             [self.view removeFromSuperview];
             [self.tempViewContainer removeFromSuperview];
-
+            
             self.isClosing = NO;
         }];
-
+        
         self.selfController = nil;//Ok ARC you can kill me now.
     }
 }
