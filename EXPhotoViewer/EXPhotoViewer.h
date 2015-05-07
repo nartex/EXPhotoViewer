@@ -3,7 +3,7 @@
 //  EXPhotoViewerDemo
 //
 //  Created by Julio Carrettoni on 3/20/14.
-//  Copyright (c) 2014 Julio Carrettoni. All rights reserved.
+//  Modified by Antoine Harlin on 7/05/15.
 //
 
 #import <UIKit/UIKit.h>
@@ -21,8 +21,15 @@
  */
 @property (nonatomic, strong) UIColor *backgroundColor;
 
+/**
+ *  The title label, to be customized after creation
+ */
+@property (strong, nonatomic) UILabel *titleLabel;
+
 @property (atomic, readonly) BOOL isClosing;
 
+
++ (instancetype)showImageFrom:(UIImageView *)imageView title:(NSString *)title;
 + (instancetype)showImageFrom:(UIImageView *)imageView;
 + (instancetype)newViewerFor:(UIImageView *)imageView;
 
