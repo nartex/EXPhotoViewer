@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
 
   s.name         = "EXPhotoViewer"
-  s.version      = "1.1.3"
+  s.version      = "1.1.4"
   s.summary      = "A one liner full screen photo viewer"
 
   s.description  = <<-DESC
