@@ -3,7 +3,7 @@
 //  EXPhotoViewerDemo
 //
 //  Created by Julio Carrettoni on 3/20/14.
-//  Modified by Antoine Harlin on 7/05/15.
+//  Modified by Antoine Harlin on 5/06/15.
 //  MIT license
 
 #import "EXPhotoViewer.h"
@@ -23,6 +23,11 @@
 @end
 
 @implementation EXPhotoViewer
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.automaticallyAdjustsScrollViewInsets = NO;
+}
 
 + (instancetype)showImageFrom:(UIImageView *)imageView {
     EXPhotoViewer *viewer = [self newViewerFor:imageView];
@@ -55,20 +60,34 @@
 -(void)loadView {
     self.view = [[UIView alloc] initWithFrame:[UIScreen mainScreen].bounds];
     self.view.backgroundColor = [UIColor clearColor];
+
+    self.theImageView = [[UIImageView alloc]initWithImage:self.originalImageView.image];
+    self.zoomeableScrollView = [[UIScrollView alloc]initWithFrame:self.view.bounds];
+    [self.zoomeableScrollView addSubview:self.theImageView];
+    self.zoomeableScrollView.contentSize = self.theImageView.bounds.size;
+    self.zoomeableScrollView.indicatorStyle = UIScrollViewIndicatorStyleWhite;
+    self.zoomeableScrollView.minimumZoomScale = 1.0f;
+    self.zoomeableScrollView.maximumZoomScale = 8.0f;
+    self.zoomeableScrollView.delegate = self;
+    [self.view addSubview:self.zoomeableScrollView];
     
-    UIScrollView* scrollView = [[UIScrollView alloc] initWithFrame:self.view.bounds];
-    scrollView.maximumZoomScale = 10.f;
-    scrollView.minimumZoomScale = 1.f;
+    /*
+    
+    UIScrollView* scrollView = [[UIScrollView alloc] initWithFrame:[UIScreen mainScreen].bounds];
+    scrollView.maximumZoomScale = 6.f;
+    scrollView.minimumZoomScale = 0.8f;
     scrollView.delegate = self;
     scrollView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     [self.view addSubview: scrollView];
     self.zoomeableScrollView = scrollView;
     
-    UIImageView* imageView = [[UIImageView alloc] initWithFrame:self.view.bounds];
-    imageView.clipsToBounds = YES;
-    imageView.contentMode = self.originalImageView.contentMode;
+    UIImageView* imageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, self.originalImageView.image.size.width, self.originalImageView.image.size.height)];
+    //imageView.clipsToBounds = YES;
+    //imageView.contentMode = self.originalImageView.contentMode;
     [self.zoomeableScrollView addSubview: imageView];
     self.theImageView = imageView;
+     
+     */
 }
 
 -(UIViewController *)rootViewController {
@@ -128,7 +147,6 @@
         self.tempViewContainer.layer.transform = CATransform3DMakeScale(self.backgroundScale, self.backgroundScale, self.backgroundScale);
         self.theImageView.frame = [self centeredOnScreenImage:self.theImageView.image];
     } completion:^(BOOL finished) {
-        [self adjustScrollInsetsToCenterImage];
         UITapGestureRecognizer* tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(close)];
         [self.view addGestureRecognizer:tap];
     }];
@@ -145,7 +163,8 @@
     CGRect newFrame = [self rootViewController].view.bounds;
     self.tempViewContainer.frame = newFrame;
     self.view.frame = newFrame;
-    [self adjustScrollInsetsToCenterImage];
+    self.zoomeableScrollView.frame = newFrame;
+    [self scrollViewDidEndZooming:self.zoomeableScrollView withView:self.theImageView atScale:1.0];
 }
 
 - (void)close {
@@ -197,69 +216,20 @@
     return self.theImageView;
 }
 
-- (void)adjustScrollInsetsToCenterImage {
-    CGSize imageSize = [self imageSizesizeThatFitsForImage:self.theImageView.image];
-    self.zoomeableScrollView.zoomScale = 1.0;
-    self.theImageView.frame = CGRectMake(0, 0, imageSize.width, imageSize.height);
-    self.zoomeableScrollView.contentSize = self.theImageView.frame.size;
-    
-    CGRect innerFrame = self.theImageView.frame;
-    CGRect scrollerBounds = self.zoomeableScrollView.bounds;
-    CGPoint myScrollViewOffset = self.zoomeableScrollView.contentOffset;
-    
-    if ( ( innerFrame.size.width < scrollerBounds.size.width ) || ( innerFrame.size.height < scrollerBounds.size.height ) )
-    {
-        CGFloat tempx = self.theImageView.center.x - ( scrollerBounds.size.width / 2 );
-        CGFloat tempy = self.theImageView.center.y - ( scrollerBounds.size.height / 2 );
-        myScrollViewOffset = CGPointMake( tempx, tempy);
+- (void)scrollViewDidEndZooming:(UIScrollView *)scrollView withView:(UIView *)view atScale:(CGFloat)scale {
+    float x = 0;
+    if (self.theImageView.frame.size.width < self.zoomeableScrollView.frame.size.width) {
+        x = (self.zoomeableScrollView.frame.size.width - self.theImageView.frame.size.width) / 2;
     }
-    
-    UIEdgeInsets anEdgeInset = { 0, 0, 0, 0};
-    if ( scrollerBounds.size.width > innerFrame.size.width )
-    {
-        anEdgeInset.left = (scrollerBounds.size.width - innerFrame.size.width) / 2;
-        anEdgeInset.right = -anEdgeInset.left; // I don't know why this needs to be negative, but that's what works
+    float y = 0;
+    if (self.theImageView.frame.size.height < self.zoomeableScrollView.frame.size.height) {
+        y = (self.zoomeableScrollView.frame.size.height - self.theImageView.frame.size.height) / 2;
     }
-    if ( scrollerBounds.size.height > innerFrame.size.height )
-    {
-        anEdgeInset.top = (scrollerBounds.size.height - innerFrame.size.height) / 2;
-        anEdgeInset.bottom = -anEdgeInset.top; // I don't know why this needs to be negative, but that's what works
-    }
-    
-    self.zoomeableScrollView.contentOffset = myScrollViewOffset;
-    self.zoomeableScrollView.contentInset = anEdgeInset;
-}
-
-- (void)scrollViewDidZoom:(UIScrollView *)scrollView {
-    UIView* view = self.theImageView;
-    
-    CGRect innerFrame = view.frame;
-    CGRect scrollerBounds = scrollView.bounds;
-    CGPoint myScrollViewOffset = scrollView.contentOffset;
-    
-    if ( ( innerFrame.size.width < scrollerBounds.size.width ) || ( innerFrame.size.height < scrollerBounds.size.height ) )
-    {
-        CGFloat tempx = view.center.x - ( scrollerBounds.size.width / 2 );
-        CGFloat tempy = view.center.y - ( scrollerBounds.size.height / 2 );
-        myScrollViewOffset = CGPointMake( tempx, tempy);
-    }
-    
-    UIEdgeInsets anEdgeInset = { 0, 0, 0, 0};
-    if ( scrollerBounds.size.width > innerFrame.size.width )
-    {
-        anEdgeInset.left = (scrollerBounds.size.width - innerFrame.size.width) / 2;
-        anEdgeInset.right = -anEdgeInset.left; // I don't know why this needs to be negative, but that's what works
-    }
-    if ( scrollerBounds.size.height > innerFrame.size.height )
-    {
-        anEdgeInset.top = (scrollerBounds.size.height - innerFrame.size.height) / 2;
-        anEdgeInset.bottom = -anEdgeInset.top; // I don't know why this needs to be negative, but that's what works
-    }
-    
-    [UIView animateWithDuration:0.3 animations:^{
-        scrollView.contentOffset = myScrollViewOffset;
-        scrollView.contentInset = anEdgeInset;
+    [UIView animateWithDuration:0.2 animations:^{
+        [UIView setAnimationBeginsFromCurrentState:YES];
+        self.theImageView.frame = CGRectMake(x, y, self.theImageView.frame.size.width, self.theImageView.frame.size.height);
     }];
+    
 }
 
 @end
