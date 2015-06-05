@@ -3,7 +3,7 @@
 //  EXPhotoViewerDemo
 //
 //  Created by Julio Carrettoni on 3/20/14.
-//  Modified by Antoine Harlin on 5/06/15.
+//  Modified by Antoine Harlin on 7/05/15.
 //  MIT license
 
 #import "EXPhotoViewer.h"
@@ -70,24 +70,6 @@
     self.zoomeableScrollView.maximumZoomScale = 8.0f;
     self.zoomeableScrollView.delegate = self;
     [self.view addSubview:self.zoomeableScrollView];
-    
-    /*
-    
-    UIScrollView* scrollView = [[UIScrollView alloc] initWithFrame:[UIScreen mainScreen].bounds];
-    scrollView.maximumZoomScale = 6.f;
-    scrollView.minimumZoomScale = 0.8f;
-    scrollView.delegate = self;
-    scrollView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    [self.view addSubview: scrollView];
-    self.zoomeableScrollView = scrollView;
-    
-    UIImageView* imageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, self.originalImageView.image.size.width, self.originalImageView.image.size.height)];
-    //imageView.clipsToBounds = YES;
-    //imageView.contentMode = self.originalImageView.contentMode;
-    [self.zoomeableScrollView addSubview: imageView];
-    self.theImageView = imageView;
-     
-     */
 }
 
 -(UIViewController *)rootViewController {
